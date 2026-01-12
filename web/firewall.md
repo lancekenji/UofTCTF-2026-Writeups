@@ -166,13 +166,3 @@ HTTP/1.1 200 OK
 2. **TCP window control** is a powerful, often overlooked mechanism
 3. **State tracking** is essential for effective network filtering
 4. eBPF firewalls must perform **stream reassembly** to detect patterns across packets
-
-### Mitigation Recommendations
-
-To fix this vulnerability:
-
-1. **Implement stateful inspection**: Track TCP streams and reassemble data
-2. **Use conntrack/nfconntrack**: Maintain connection state
-3. **Deep Packet Inspection at stream level**: Inspect reassembled application data
-4. **Layer 7 filtering**: Use application-aware proxies (e.g., Envoy, HAProxy)
-5. **Consider existing solutions**: Use established firewalls like iptables with conntrack, nftables, or Cilium with proper stream tracking
