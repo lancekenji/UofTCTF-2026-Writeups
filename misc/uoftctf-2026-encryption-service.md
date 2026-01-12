@@ -1,20 +1,15 @@
-**Category:** Misc  
-**Challenge Name:** Encryption Service
+# Encryption Service
 
----
-
-## Challenge Description
-
-> We made an encryption service. We forgot to make the decryption though.  
+> We made an encryption service. We forgot to make the decryption though.\
 > As compensation we are giving free encrypted flags.
 
 The service allows users to submit plaintexts, which are then encrypted using AES-CBC with a user-supplied key. As a bonus, the flag is appended to the plaintext and encrypted as well.
 
----
+***
 
-## Provided Files
+### Provided Files
 
-### `enc.py`
+#### `enc.py`
 
 ```python
 #!/usr/local/bin/python3
@@ -50,7 +45,8 @@ def main():
 if __name__ == "__main__":
 	main()
 ```
-## `run.sh`
+
+### `run.sh`
 
 ```bash
 #!/bin/sh
@@ -80,11 +76,12 @@ cat /flag.txt >> "$OUTFILE"
 echo "Here is the encryption."
 echo "$(cat "$OUTFILE" | xargs /app/enc.py)"
 ```
-## Vulnerability Analysis
 
-At first glance, this looks like a standard AES-CBC encryption service. However, the real vulnerability has **nothing to do with cryptography**.
+### Vulnerability Analysis
 
-### Root Cause: `xargs`
+At first glance, this looks like a standard AES-CBC encryption service. However, the real vulnerability has **nothing to do with cryptography**.
+
+#### Root Cause: `xargs`
 
 The service invokes:
 
@@ -92,57 +89,42 @@ The service invokes:
 cat "$OUTFILE" | xargs /app/enc.py
 ```
 
-Important properties of `xargs`:
+Important properties of `xargs`:
 
-- It **splits input into multiple command executions** if the argument size exceeds the system limit (~128KB).
-    
-- Each execution calls `enc.py` **again**, independently.
-    
-- The first argument to `enc.py` is interpreted as the **AES key**.
+* It **splits input into multiple command executions** if the argument size exceeds the system limit (\~128KB).
+* Each execution calls `enc.py` **again**, independently.
+* The first argument to `enc.py` is interpreted as the **AES key**.
 
-### Why This Is Bad
+#### Why This Is Bad
 
-- The first line of `OUTFILE` is a random 16-byte hex string → used as the AES key.
-    
-- All following lines are treated as plaintext.
-    
-- If we make the input large enough, `xargs` will:
-    
-    - Execute `enc.py` multiple times
-        
-    - Use attacker-controlled data as the AES key for later executions
-        
-    - Re-append the flag for each execution
-
+* The first line of `OUTFILE` is a random 16-byte hex string → used as the AES key.
+* All following lines are treated as plaintext.
+* If we make the input large enough, `xargs` will:
+  * Execute `enc.py` multiple times
+  * Use attacker-controlled data as the AES key for later executions
+  * Re-append the flag for each execution
 
 This means we can:
 
-1. Force a **known AES key**
-    
+1. Force a **known AES key**
 2. Get the flag encrypted under that key
-    
 3. Decrypt it locally
 
 No oracle. No brute force. Just Unix behavior.
 
-## Exploitation Strategy
+### Exploitation Strategy
 
-1. Send **thousands of fake keys** (valid 16-byte hex strings).
-    
-2. Overflow the `xargs` buffer.
-    
-3. Force `xargs` to split into multiple executions.
-    
-4. Capture the **last encryption**, which:
-    
-    - Uses our controlled AES key
-        
-    - Contains the flag
-        
+1. Send **thousands of fake keys** (valid 16-byte hex strings).
+2. Overflow the `xargs` buffer.
+3. Force `xargs` to split into multiple executions.
+4. Capture the **last encryption**, which:
+   * Uses our controlled AES key
+   * Contains the flag
 5. Decrypt locally.
 
-## Exploit Script
-## `solution.py`
+### Exploit Script
+
+### `solution.py`
 
 ```python
 from pwn import *
@@ -187,7 +169,7 @@ if __name__ == "__main__":
     solve()
 ```
 
-## Output
+### Output
 
 ```plaintext
 00000000000000000000000000000000
@@ -196,23 +178,19 @@ if __name__ == "__main__":
 uoftctf{x4rgs_d03sn7_run_in_0n3_pr0c3ss}
 ```
 
-## Flag
+### Flag
 
 `uoftctf{x4rgs_d03sn7_run_in_0n3_pr0c3ss}`
 
-## Takeaways
+### Takeaways
 
-- `xargs` **does not guarantee a single execution**
-    
-- Never use `xargs` with security-sensitive arguments
-    
-- Crypto code can be perfectly fine and still be useless if the **wrapper script is broken**
-    
-- Sometimes the best crypto attack is just… **Unix trivia**
+* `xargs` **does not guarantee a single execution**
+* Never use `xargs` with security-sensitive arguments
+* Crypto code can be perfectly fine and still be useless if the **wrapper script is broken**
+* Sometimes the best crypto attack is just… **Unix trivia**
 
-## TL;DR
+### TL;DR
 
-> The encryption was secure.  
-> The shell script was not.  
-> `xargs` snitched the flag.
-
+> The encryption was secure.\
+> The shell script was not.\
+> `xargs` snitched the flag.
