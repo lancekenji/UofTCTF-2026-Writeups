@@ -1,6 +1,6 @@
 # Table of contents
 
-* [Introduction](README.md)
+* [UofTCTF 2026 - Writeups](README.md)
 
 ## Misc
 
